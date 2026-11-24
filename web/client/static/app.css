@@ -1,0 +1,98 @@
+/*
+ * Tokens and document defaults. Everything else is a css(...) mixin, which Remix puts in the `rmx`
+ * layer; naming the layers here, first in <head>, makes every rule below a default.
+ */
+@layer base, rmx, app;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --metro-bg: #000;
+    --metro-fg: #fff;
+    --metro-muted: #a0a0a0;
+    /* theme-boot.js and components/metro/_lib/theme_store.ts override these two on <html>. */
+    --metro-accent: #0050ef;
+    --metro-on-accent: #fff;
+
+    /*
+     * The tile unit. On a phone the four columns fill the viewport exactly, so there is no dead band
+     * on the right and nothing to scroll sideways; from 640px up tiles stop growing and groups sit
+     * side by side instead.
+     */
+    --metro-gap: 10px;
+    --metro-pad: 12px;
+    --metro-unit: calc(
+      (100vw - 2 * var(--metro-pad) - 3 * var(--metro-gap)) / 4
+    );
+
+    --metro-font:
+      "Segoe UI", "Segoe WP", "Open Sans", "Helvetica Neue", Arial,
+      "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif;
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --metro-bg: #fff;
+    --metro-fg: #000;
+    --metro-muted: #616161;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --metro-pad: 48px;
+      --metro-unit: 72px;
+    }
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  /* 100vw counts a classic scrollbar, so the document must not have one. Screens scroll inside. */
+  html {
+    scrollbar-width: none;
+  }
+
+  body {
+    margin: 0;
+    overflow-x: clip;
+    font-family: var(--metro-font);
+    font-weight: 300;
+    line-height: 1.35;
+    color: var(--metro-fg);
+    background: var(--metro-bg);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  ul {
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    list-style: none;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--metro-fg);
+    outline-offset: 2px;
+  }
+}
