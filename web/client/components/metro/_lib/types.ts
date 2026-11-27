@@ -46,6 +46,8 @@ export type CalendarEvent = {
   /** `HH:MM`, 24-hour. Without it the event lasts all day. */
   time?: string;
   where?: string;
+  /** Any CSS colour: the calendar the event belongs to. The event chip is tinted with it. */
+  color?: string;
   /** `YYYY-MM-DD`, local. */
   date?: string;
   daysFromToday?: number;

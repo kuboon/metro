@@ -75,3 +75,29 @@ export function weekdayNames(
     (_, i) => format.format(new Date(2023, 0, 1 + ((weekStart + i) % 7))),
   );
 }
+
+/** The weeks of one month: seven cells each, `undefined` where the day belongs to another month. */
+export function monthWeeks(
+  year: number,
+  month: number,
+  weekStart: number,
+): (Date | undefined)[][] {
+  const weeks: (Date | undefined)[][] = [];
+  const last = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= last; d++) {
+    const day = new Date(year, month, d);
+    const col = (day.getDay() - weekStart + 7) % 7;
+    if (d === 1 || col === 0) weeks.push(Array(7).fill(undefined));
+    weeks[weeks.length - 1][col] = day;
+  }
+  return weeks;
+}
+
+/** The ISO 8601 week number of the week holding `date`. */
+export function isoWeek(date: Date): number {
+  // The ISO week belongs to the year of its Thursday.
+  const thursday = addDays(date, 3 - ((date.getDay() + 6) % 7));
+  const jan1 = new Date(thursday.getFullYear(), 0, 1);
+  const days = Math.round((thursday.getTime() - jan1.getTime()) / 86_400_000);
+  return 1 + Math.floor(days / 7);
+}
