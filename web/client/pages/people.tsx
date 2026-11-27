@@ -16,28 +16,28 @@ export default function People(_handle: Handle) {
       background={photo("forest")}
       back={routes.home.href()}
       contacts={[
-        { name: "Aoi Mori", photo: photo("sea") },
-        { name: "Haru Ito" },
-        { name: "Ren Abe" },
-        { name: "Mio Sato", photo: photo("dusk") },
-        { name: "Sora Kato" },
-        { name: "Yui Hara", photo: photo("forest") },
-        { name: "Nao Endo" },
-        { name: "Kai Ono" },
+        { name: "Ada Lovelace", photo: photo("sea") },
+        { name: "Linus Torvalds" },
+        { name: "Alan Turing" },
+        { name: "Grace Hopper", photo: photo("dusk") },
+        { name: "Dennis Ritchie" },
+        { name: "Margaret Hamilton", photo: photo("forest") },
+        { name: "Tim Berners-Lee" },
+        { name: "Yukihiro Matsumoto" },
       ]}
       posts={[
         {
-          author: "Haru Ito",
+          author: "Linus Torvalds",
           text: "The last ferry back was worth the wait.",
           when: "12 minutes ago",
         },
         {
-          author: "Mio Sato",
+          author: "Grace Hopper",
           text: "Set the whole poster in one weight. No regrets.",
           when: "an hour ago",
         },
         {
-          author: "Kai Ono",
+          author: "Yukihiro Matsumoto",
           text: "Anyone for the hills on Sunday?",
           when: "yesterday",
         },
