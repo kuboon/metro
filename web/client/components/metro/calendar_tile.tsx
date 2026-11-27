@@ -2,6 +2,7 @@ import { clientEntry, type Handle } from "@remix-run/component";
 
 import { TileBase } from "./_lib/tile_base.tsx";
 import { TileFace } from "./_lib/tile_face.tsx";
+import { watchToday } from "./_lib/today.ts";
 import type { TileSize } from "./_lib/types.ts";
 
 export type CalendarTileProps = {
@@ -25,24 +26,9 @@ export const CalendarTile = clientEntry(
   function CalendarTile(handle: Handle<CalendarTileProps>) {
     let today: Date | undefined;
 
-    handle.queueTask(() => {
-      if (handle.signal.aborted) return;
-      let timer: number | undefined;
-
-      const refresh = () => {
-        today = new Date();
-        handle.update();
-        clearTimeout(timer);
-        const midnight = new Date(today);
-        midnight.setHours(24, 0, 0, 0);
-        timer = setTimeout(refresh, midnight.getTime() - today.getTime() + 50);
-      };
-
-      refresh();
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) refresh();
-      }, { signal: handle.signal });
-      handle.signal.addEventListener("abort", () => clearTimeout(timer));
+    watchToday(handle, (now) => {
+      today = now;
+      handle.update();
     });
 
     return () => {

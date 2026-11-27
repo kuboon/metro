@@ -9,7 +9,7 @@ async function page(path: string): Promise<string> {
 }
 
 Deno.test("every page renders the shell and boots the runtime", async () => {
-  for (const path of ["/", "/panorama", "/people"]) {
+  for (const path of ["/", "/calendar", "/panorama", "/people"]) {
     const html = await page(path);
     assertStringIncludes(html, "<!DOCTYPE html>");
     assertStringIncludes(html, '<script type="module" src="/assets/hydration');
@@ -37,9 +37,24 @@ Deno.test("the Start screen places every kind of tile as a client entry", async 
 });
 
 Deno.test("the calendar does not bake the build date into the page", async () => {
-  const html = await page("/");
   const weekday = new Intl.DateTimeFormat("en", { weekday: "long" });
-  assert(!html.includes(weekday.format(new Date())));
+  const month = new Intl.DateTimeFormat("en", { month: "long" });
+  for (const path of ["/", "/calendar"]) {
+    const html = (await page(path)).toLowerCase();
+    assert(!html.includes(weekday.format(new Date()).toLowerCase()), path);
+    assert(!html.includes(month.format(new Date()).toLowerCase()), path);
+  }
+});
+
+Deno.test("the calendar screen hydrates its agenda and month", async () => {
+  const html = await page("/calendar");
+  for (const name of ["Agenda", "MonthView", "PivotHeader"]) {
+    assertStringIncludes(html, `"exportName":"${name}"`);
+  }
+});
+
+Deno.test("the calendar tile opens the calendar", async () => {
+  assertStringIncludes(await page("/"), 'href="/calendar"');
 });
 
 Deno.test("a fold never turns a face past edge-on", async () => {

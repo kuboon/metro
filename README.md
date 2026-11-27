@@ -29,6 +29,13 @@ Demo」）を土台に、タイルやピボット／パノラマといった要�
 - `Pivot` / `Panorama` / `PanoramaSection` / `PivotHub`
 - `PeopleHub` / `PostRow` / `ContactMosaic`
 
+カレンダー:
+
+- `Agenda`（今日からの予定を日ごとに）/ `MonthView`（6
+  週の月表示、日を選ぶと予定）/ `EventRow`
+- 予定は `date`（`YYYY-MM-DD`）か `daysFromToday`
+  で指定する。後者は日付をブラウザで解決する
+
 設定:
 
 - `AccentPicker`（ダーク／ライトとアクセントカラー。選択は localStorage に保存）

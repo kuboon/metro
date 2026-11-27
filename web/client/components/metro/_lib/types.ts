@@ -36,3 +36,17 @@ export type Photo = { src: string; alt: string };
 export type Contact = { name: string; photo?: string };
 
 export type Post = { author: string; text: string; when: string };
+
+/**
+ * One appointment. Give `date` for a fixed day, or `daysFromToday` for a day the browser works out
+ * — a static page cannot know which day it will be read on.
+ */
+export type CalendarEvent = {
+  title: string;
+  /** `HH:MM`, 24-hour. Without it the event lasts all day. */
+  time?: string;
+  where?: string;
+  /** `YYYY-MM-DD`, local. */
+  date?: string;
+  daysFromToday?: number;
+};

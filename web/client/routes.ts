@@ -9,6 +9,7 @@ import { base } from "./base.ts";
 
 export const routes = route(base, {
   home: get("/"),
+  calendar: get("/calendar"),
   panorama: get("/panorama"),
   people: get("/people"),
 });

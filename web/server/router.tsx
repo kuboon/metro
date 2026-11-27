@@ -17,6 +17,7 @@ import {
 
 import { base } from "../client/base.ts";
 import { Layout, type PageModule } from "../client/layout.tsx";
+import * as CalendarPage from "../client/pages/calendar.tsx";
 import * as Home from "../client/pages/index.tsx";
 import * as PanoramaPage from "../client/pages/panorama.tsx";
 import * as People from "../client/pages/people.tsx";
@@ -72,6 +73,7 @@ router.map(
   createController(routes, {
     actions: {
       home: pageAction(Home),
+      calendar: pageAction(CalendarPage),
       panorama: pageAction(PanoramaPage),
       people: pageAction(People),
     },
