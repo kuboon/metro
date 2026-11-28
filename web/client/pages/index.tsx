@@ -46,7 +46,10 @@ export default function Home(_handle: Handle) {
                   }}
                   interval={5000}
                 />
-                <CalendarTile event="design review, 14:00" />
+                <CalendarTile
+                  event="design review, 14:00"
+                  href={routes.calendar.href()}
+                />
                 <FlipTile
                   size="wide"
                   front={{ icon: "mail", label: "mail", count: 12 }}
