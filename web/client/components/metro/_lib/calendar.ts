@@ -76,21 +76,58 @@ export function weekdayNames(
   );
 }
 
-/** The weeks of one month: seven cells each, `undefined` where the day belongs to another month. */
-export function monthWeeks(
-  year: number,
-  month: number,
-  weekStart: number,
-): (Date | undefined)[][] {
-  const weeks: (Date | undefined)[][] = [];
-  const last = new Date(year, month + 1, 0).getDate();
-  for (let d = 1; d <= last; d++) {
-    const day = new Date(year, month, d);
-    const col = (day.getDay() - weekStart + 7) % 7;
-    if (d === 1 || col === 0) weeks.push(Array(7).fill(undefined));
-    weeks[weeks.length - 1][col] = day;
+/** One square of the month view: a day, the number of the month that starts next, or nothing. */
+export type CalendarCell =
+  | { day: Date; month?: undefined }
+  | { month: Date; day?: undefined }
+  | undefined;
+
+/** A row of seven cells, and the month it counts as for the header. */
+export type CalendarRow = { cells: CalendarCell[]; month: Date };
+
+/**
+ * Consecutive months as one stream of rows.
+ *
+ * Each month opens with a square holding its number, right after the previous month's last day,
+ * then six empty squares, then its 1st. Seven squares is a whole week, so every day still falls in
+ * its own weekday's column.
+ */
+export function calendarRows(months: Date[], weekStart: number): CalendarRow[] {
+  const rows: CalendarRow[] = [];
+  const column = (date: Date) => (date.getDay() - weekStart + 7) % 7;
+  let cells: CalendarCell[] = [];
+  const push = (cell: CalendarCell) => {
+    cells.push(cell);
+    if (cells.length < 7) return;
+    rows.push({ cells, month: rowMonth(cells) });
+    cells = [];
+  };
+
+  if (months.length > 0) {
+    // The number sits a week ahead of the 1st, so in the 1st's own column, one row up.
+    const lead = column(months[0]);
+    for (let i = 0; i < lead; i++) cells.push(undefined);
   }
-  return weeks;
+  for (const month of months) {
+    push({ month });
+    for (let i = 0; i < 6; i++) push(undefined);
+    const last = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+    for (let d = 1; d <= last.getDate(); d++) {
+      push({ day: new Date(month.getFullYear(), month.getMonth(), d) });
+    }
+  }
+  if (cells.length > 0) {
+    while (cells.length < 7) cells.push(undefined);
+    rows.push({ cells, month: rowMonth(cells) });
+  }
+  return rows;
+}
+
+/** The month a row belongs to: its first day's, or the one its number square opens. */
+function rowMonth(cells: CalendarCell[]): Date {
+  const day = cells.find((cell) => cell?.day)?.day;
+  if (day) return new Date(day.getFullYear(), day.getMonth(), 1);
+  return cells.find((cell) => cell?.month)!.month!;
 }
 
 /** The ISO 8601 week number of the week holding `date`. */

@@ -74,3 +74,25 @@ Deno.test("the phone grid is four columns derived from the viewport", async () =
   );
   assertStringIncludes(await page("/"), "repeat(4, var(--metro-unit))");
 });
+
+Deno.test("between months the stream grows by one week, so weekdays keep their columns", async () => {
+  const { calendarRows } = await import(
+    "../client/components/metro/_lib/calendar.ts"
+  );
+  const months = [
+    new Date(2026, 10, 1),
+    new Date(2026, 11, 1),
+    new Date(2027, 0, 1),
+  ];
+  const rows = calendarRows(months, 1);
+  for (const { cells } of rows) {
+    cells.forEach((cell, col) => {
+      if (cell?.day) assertEquals((cell.day.getDay() + 6) % 7, col);
+    });
+  }
+  const flat = rows.flatMap((row) => row.cells);
+  const dec = flat.findIndex((cell) => cell?.month?.getMonth() === 11);
+  assertEquals(flat[dec - 1]?.day?.getDate(), 30); // right after Nov 30
+  assertEquals(flat.slice(dec + 1, dec + 7), Array(6).fill(undefined));
+  assertEquals(flat[dec + 7]?.day?.getDate(), 1); // then Dec 1
+});

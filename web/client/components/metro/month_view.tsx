@@ -2,10 +2,10 @@ import { clientEntry, css, type Handle, ref } from "@remix-run/component";
 
 import { color, grid, weight } from "../../tokens.ts";
 import {
+  calendarRows,
   dayKey,
   eventsByDay,
   isoWeek,
-  monthWeeks,
   weekdayNames,
 } from "./_lib/calendar.ts";
 import { watchToday } from "./_lib/today.ts";
@@ -26,10 +26,10 @@ const EDGE = 1200;
 /**
  * Months as one endless vertical scroll of weeks.
  *
- * Every week is a row as tall as its busiest day: events stack under the date as chips. A month
- * starts on a fresh row in the column of its 1st, after a blank row's worth of space, so a week
- * that straddles two months shows up twice, half in each. The month at the top of the screen
- * names itself in a header that stays put.
+ * Every week is a row as tall as its busiest day: events stack under the date as small tiles.
+ * Between two months the stream of squares gets one week longer: the square after the last day
+ * holds the next month's number, six stay empty, and the 1st follows in its own weekday's column.
+ * The month at the top of the screen names itself in a header that stays put.
  *
  * Like `CalendarTile`, it learns the date in the browser: the HTML holds the weekday headings and
  * nothing else, never the month the site happened to be built in.
@@ -124,7 +124,6 @@ export const MonthView = clientEntry(
         month: "long",
         year: "numeric",
       });
-      const shortMonth = new Intl.DateTimeFormat(locale, { month: "short" });
       const fullDate = new Intl.DateTimeFormat(locale, { dateStyle: "full" });
       const thisYear = today?.getFullYear();
       const name = (month: Date, format: Intl.DateTimeFormat) =>
@@ -148,106 +147,98 @@ export const MonthView = clientEntry(
             </div>
           </div>
 
-          {months.map((month) => {
-            const weeks = monthWeeks(
-              month.getFullYear(),
-              month.getMonth(),
-              weekStart,
-            );
-            const startCol = weeks[0].findIndex(Boolean);
-            const id = `${month.getFullYear()}-${month.getMonth() + 1}`;
+          {calendarRows(months, weekStart).map(({ cells, month }) => {
+            const from = cells.findIndex(Boolean);
+            const to = cells.findLastIndex(Boolean);
+            const days = cells.flatMap((cell) => cell?.day ? [cell.day] : []);
+            const hasToday = days.some((d) => dayKey(d) === todayKey);
+            const opening = cells[from]!;
             return (
-              <section key={id} data-month={id} mix={monthStyle}>
-                <h3
-                  mix={monthLabelStyle}
-                  // Over the 1st; late in the week it hangs left from there, so it never runs off.
-                  style={startCol < 4
-                    ? { gridColumn: `${startCol + 1} / -1` }
-                    : {
-                      gridColumn: `1 / ${startCol + 2}`,
-                      justifySelf: "end",
-                    }}
-                >
-                  {name(month, shortMonth)}
-                </h3>
-                {weeks.map((week) => {
-                  const from = week.findIndex(Boolean);
-                  const to = week.findLastIndex(Boolean);
-                  const days = week.filter(Boolean) as Date[];
-                  const number = isoWeek(days[0]);
-                  const hasToday = days.some((d) => dayKey(d) === todayKey);
+              <div
+                key={opening.day
+                  ? dayKey(opening.day)
+                  : `m${dayKey(opening.month!)}`}
+                mix={weekStyle}
+                data-month={`${month.getFullYear()}-${month.getMonth() + 1}`}
+                data-today={hasToday ? "" : undefined}
+              >
+                {days.length === 0 ? null : (
+                  <span
+                    mix={weekNumberStyle}
+                    data-current={hasToday ? "" : undefined}
+                    style={from === 0
+                      ? { gridColumn: "1", justifySelf: "start" }
+                      : { gridColumn: String(from), justifySelf: "end" }}
+                    aria-hidden="true"
+                  >
+                    {isoWeek(days[0])}
+                  </span>
+                )}
+                <span
+                  mix={ruleStyle}
+                  data-indent={from === 0 && days.length > 0 ? "" : undefined}
+                  style={{ gridColumn: `${from + 1} / ${to + 2}` }}
+                />
+                {cells.map((cell, col) => {
+                  if (cell?.month) {
+                    const opens = cell.month;
+                    return (
+                      <h3
+                        key={`m${col}`}
+                        mix={monthNumberStyle}
+                        style={{ gridColumn: String(col + 1) }}
+                        aria-label={longMonthYear.format(opens)}
+                      >
+                        {opens.getMonth() + 1}
+                        {opens.getMonth() === 0
+                          ? <span mix={yearStyle}>{opens.getFullYear()}</span>
+                          : null}
+                      </h3>
+                    );
+                  }
+                  if (!cell?.day) return null;
+                  const day = cell.day;
+                  const key = dayKey(day);
+                  const list: CalendarEvent[] = byDay.get(key) ?? [];
+                  const weekday = (col + weekStart) % 7;
                   return (
                     <div
-                      key={dayKey(days[0])}
-                      mix={weekStyle}
-                      data-today={hasToday ? "" : undefined}
+                      key={key}
+                      mix={dayStyle}
+                      style={{ gridColumn: String(col + 1) }}
                     >
-                      <span
-                        mix={weekNumberStyle}
-                        data-current={hasToday ? "" : undefined}
-                        style={from === 0
-                          ? { gridColumn: "1", justifySelf: "start" }
-                          : { gridColumn: String(from), justifySelf: "end" }}
-                        aria-hidden="true"
+                      <time
+                        dateTime={key}
+                        aria-label={fullDate.format(day)}
+                        aria-current={key === todayKey ? "date" : undefined}
+                        data-weekend={weekday === 0 || weekday === 6
+                          ? ""
+                          : undefined}
+                        mix={dateStyle}
                       >
-                        {number}
-                      </span>
-                      <span
-                        mix={ruleStyle}
-                        data-indent={from === 0 ? "" : undefined}
-                        style={{ gridColumn: `${from + 1} / ${to + 2}` }}
-                      />
-                      {week.map((day, col) => {
-                        if (!day) return null;
-                        const key = dayKey(day);
-                        const list: CalendarEvent[] = byDay.get(key) ?? [];
-                        const weekend = (col + weekStart) % 7 === 0 ||
-                          (col + weekStart) % 7 === 6;
-                        return (
-                          <div
-                            key={key}
-                            mix={dayStyle}
-                            style={{ gridColumn: String(col + 1) }}
-                          >
-                            <time
-                              dateTime={key}
-                              aria-label={fullDate.format(day)}
-                              aria-current={key === todayKey
-                                ? "date"
-                                : undefined}
-                              data-weekend={weekend ? "" : undefined}
-                              mix={dateStyle}
+                        {day.getDate()}
+                      </time>
+                      {list.length === 0 ? null : (
+                        <ul mix={chipsStyle}>
+                          {list.map((event) => (
+                            <li
+                              key={`${event.time} ${event.title}`}
+                              title={[event.time, event.title, event.where]
+                                .filter(Boolean).join(" · ")}
+                              mix={chipStyle}
+                              style={event.color === undefined
+                                ? undefined
+                                : { "--chip": event.color }}
                             >
-                              {day.getDate()}
-                            </time>
-                            {list.length === 0 ? null : (
-                              <ul mix={chipsStyle}>
-                                {list.map((event) => (
-                                  <li
-                                    key={`${event.time} ${event.title}`}
-                                    title={[
-                                      event.time,
-                                      event.title,
-                                      event.where,
-                                    ]
-                                      .filter(Boolean).join(" · ")}
-                                    mix={chipStyle}
-                                    style={event.color === undefined
-                                      ? undefined
-                                      : { "--chip": event.color }}
-                                  >
-                                    {event.title}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        );
-                      })}
+                              {event.title}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   );
                 })}
-              </section>
+              </div>
             );
           })}
         </div>
@@ -298,22 +289,6 @@ const weekdayStyle = css({
   textTransform: "lowercase",
 });
 
-/** A month opens with a blank row's worth of space, then its short name over the 1st. */
-const monthStyle = css({
-  display: "grid",
-  gridTemplateColumns: columns,
-  paddingTop: "4.5rem",
-});
-
-const monthLabelStyle = css({
-  whiteSpace: "nowrap",
-  paddingInline: "0.25rem",
-  fontSize: "1.8rem",
-  fontWeight: weight.light,
-  textTransform: "lowercase",
-  color: color.accent,
-});
-
 /** One week. Its height is its busiest day's. */
 const weekStyle = css({
   gridColumn: "1 / -1",
@@ -323,6 +298,28 @@ const weekStyle = css({
   minHeight: "6.5rem",
   alignContent: "start",
   scrollMarginTop: "6rem",
+});
+
+/** The square after a month's last day: the next month's number, large and thin, on no face. */
+const monthNumberStyle = css({
+  gridRow: "2",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "flex-end",
+  aspectRatio: "1",
+  marginInline: "2px",
+  marginTop: "0.35rem",
+  padding: "0.1rem 0.3rem",
+  fontSize: "2.6rem",
+  fontWeight: weight.thin,
+  lineHeight: 1,
+  color: color.accent,
+});
+
+const yearStyle = css({
+  order: -1,
+  fontSize: "0.75rem",
+  fontWeight: weight.normal,
 });
 
 const weekNumberStyle = css({
